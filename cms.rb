@@ -52,6 +52,32 @@ get "/" do
   erb :index
 end
 
+# View signin form
+get "/users/signin" do
+  erb :signin
+end
+
+# Signing in
+post "/users/signin" do
+  if params[:username] == "admin" && params[:password] == "secret"
+    session[:username] = params[:username]
+    session[:password] = params[:password]
+    session[:msg] = "Welcome!"
+    redirect "/"
+  else
+    session[:msg] = "Invalid Credentials"
+    status 422
+    erb :signin
+  end
+end
+
+# Signing out
+post "/users/signout" do
+  session.delete(:username)
+  session[:msg]= "You have been signed out."
+  redirect "/"
+end
+
 # View create new file / document
 get "/new" do
   erb :new
