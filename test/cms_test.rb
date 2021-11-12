@@ -24,6 +24,10 @@ class CmsTest < Minitest::Test
     end
   end
 
+  def session
+    last_request.env["rack.session"]
+  end
+
   def test_view_index
     create_document "about.md"
     create_document "history.txt"
@@ -68,6 +72,7 @@ class CmsTest < Minitest::Test
     assert_equal last_response.body, "This is the new content of the file 'changes.txt'"
   end
 
+  # Long way of testing messages in session (see short way below)
   def test_not_found
     get "/nonexisting.txt" # Attempt to access a nonexistent file
 
@@ -91,13 +96,12 @@ class CmsTest < Minitest::Test
     assert_includes last_response.body, "Editing content of changes.txt"
   end
 
+  # Short way of accessing session messages (use session method defined above)
   def test_updating_file
     post "/changes.txt", changes: "This is the new content of the file 'changes.txt'"
 
     assert_equal 302, last_response.status
-
-    get last_response["Location"]
-    assert_includes last_response.body, "changes.txt has been updated"
+    assert_equal "changes.txt has been updated", session[:msg]
 
     get "/changes.txt"
     assert_equal 200, last_response.status
@@ -114,9 +118,7 @@ class CmsTest < Minitest::Test
   def test_creating_new
     post "/create", filename: "newdoc.txt"
     assert_equal 302, last_response.status
-
-    get last_response["Location"]
-    assert_includes last_response.body, "newdoc.txt has been created"
+    assert_equal "newdoc.txt has been created.", session[:msg]
 
     get "/"
     assert_includes last_response.body, "newdoc.txt"
@@ -139,12 +141,10 @@ class CmsTest < Minitest::Test
 
     post "/newtest.txt/delete"
     assert_equal 302, last_response.status
-
-    get last_response["Location"]
-    assert_includes last_response.body, "newtest.txt has been deleted"
+    assert_equal "newtest.txt has been deleted", session[:msg]
 
     get "/"
-    refute_includes last_response.body, "newtest.txt"
+    refute_includes last_response.body, %q(href="/test.txt")
   end
 
   def test_signin_form
@@ -157,28 +157,31 @@ class CmsTest < Minitest::Test
 
   def test_signin
     post "/users/signin", username: "admin", password: "secret"
+
     assert_equal 302, last_response.status
+    assert_equal "Welcome!", session[:msg]
+    assert_equal "admin", session[:username]
 
     get last_response["Location"]
-    assert_includes last_response.body, "Welcome"
     assert_includes last_response.body, "Signed in as admin"
   end
 
   def test_signin_with_bad_credentials
     post "/users/signin", username: "guest", password: "shhhh"
     assert_equal 422, last_response.status
-    assert_includes last_response.body, "Invalid credentials"
+    assert_nil session[:username]
+    assert_includes last_response.body, "Invalid Credentials"
   end
 
   def test_signout
-    post "/users/signin", username: "admin", password: "secret"
-    get last_response["Location"]
-    assert_includes last_response.body, "Welcome"
+    get "/", {}, { "rack.session" => { username: "admin" } }
+    assert_includes last_response.body, "Signed in as admin"
 
     post "/users/signout"
-    get last_response["Location"]
+    assert_equal "You have been signed out.", session[:msg]
 
-    assert_includes last_response.body, "You have been signed out"
+    get last_response["Location"]
+    assert_nil session[:username]
     assert_includes last_response.body, "Sign In"
   end
 
