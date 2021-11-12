@@ -30,6 +30,11 @@ def file_type(file_path)
   File.extname(file_path)
 end
 
+# Separating file name and file extension
+def separate_name_and_extension(file_name)
+  file_name.split('.')
+end
+
 # Loading file content, according to fyle type
 def load_file(file_path)
   file_content = File.read(file_path)
@@ -49,7 +54,7 @@ def signed_user?
   session.key?(:username)
 end
 
-# Handles the routes that require to be signed in
+# HandlING routes that require to be signed in
 def required_to_be_signed
   unless signed_user?
     session[:msg] = "Sorry, you must be signed in to perform this action."
@@ -57,7 +62,7 @@ def required_to_be_signed
   end
 end
 
-# Load credentials file; uses separates paths for the file if test environment or production environment
+# Loading credentials file; uses separates paths for the file if test environment or production environment
 def load_user_credentials
   credentials_path = if ENV["RACK_ENV"] == "test"
     File.expand_path("../test/users.yml", __FILE__)
@@ -67,6 +72,7 @@ def load_user_credentials
   YAML.load_file(credentials_path)
 end
 
+# Ensuring credentials are encrypted
 def valid_credentials?(username, password)
   credentials = load_user_credentials
 
@@ -78,9 +84,9 @@ def valid_credentials?(username, password)
   end
 end
 
-# ----- ROUTES
+# --------- ROUTES ------
 
-# View list of documents in CMS
+# List of documents in CMS
 get "/" do
   pattern = File.join(data_path, "*")
   @files = Dir.glob(pattern).map { |path| File.basename(path) }
@@ -88,7 +94,7 @@ get "/" do
   erb :index
 end
 
-# View signin form
+# Signin form
 get "/users/signin" do
   erb :signin
 end
@@ -115,14 +121,14 @@ post "/users/signout" do
   redirect "/"
 end
 
-# View create new file / document
+# Create new file form
 get "/new" do
   required_to_be_signed
 
   erb :new
 end
 
-# Create new file / document
+# Creating new file
 post "/create" do
   required_to_be_signed
 
@@ -141,7 +147,7 @@ post "/create" do
   end
 end
 
-# View content of each file
+# Content of file
 get "/:filename" do
   file_name = params[:filename]
   file_path = File.join(data_path, file_name)
@@ -154,7 +160,7 @@ get "/:filename" do
   end
 end
 
-# View edit a file page form
+# Edit file form
 get "/:filename/edit" do
   required_to_be_signed
 
@@ -165,7 +171,7 @@ get "/:filename/edit" do
   erb :edit
 end
 
-# Edit page
+# Editing file
 post "/:filename" do
   required_to_be_signed
 
@@ -179,7 +185,7 @@ post "/:filename" do
   redirect "/"
 end
 
-# View delete file form
+# Deleting file
 post "/:filename/delete" do
   required_to_be_signed
 
@@ -189,5 +195,23 @@ post "/:filename/delete" do
   File.delete(file_path)
 
   session[:msg] = "#{file_name} has been deleted"
+  redirect "/"
+end
+
+# Duplicating file
+post "/:filename/duplicate" do
+  required_to_be_signed
+
+  file_name = params[:filename]
+  file_path = File.join(data_path, file_name)
+
+  name, extension = separate_name_and_extension(file_name)
+  copy_name = name + "_copy." + extension
+
+  destination_path = File.join(data_path, copy_name)
+
+  FileUtils.copy_file(file_path, destination_path)
+  session[:msg] = "#{copy_name} has been created."
+
   redirect "/"
 end
