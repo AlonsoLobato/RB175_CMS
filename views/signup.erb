@@ -1,0 +1,13 @@
+<form method="post" action="/users/signup">
+  <div>
+    <label for="username"> Choose username:
+      <input name="username" id="username" value="<%= params[:username] %>"/>
+    </label>
+  </div>
+  <div>
+    <label for="password"> Choose password:
+      <input type="password" id="password" name="password" />
+    </label>
+  </div>
+  <button type="submit">Sign up</button>
+</form>

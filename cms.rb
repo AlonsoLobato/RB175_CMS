@@ -62,6 +62,11 @@ def required_to_be_signed
   end
 end
 
+# Encrypting password
+def encrypt_password(password)
+  bcrypt_password = BCrypt::Password.create(password)
+end
+
 # Loading credentials file; uses separates paths for the file if test environment or production environment
 def load_user_credentials
   credentials_path = if ENV["RACK_ENV"] == "test"
@@ -119,6 +124,25 @@ post "/users/signout" do
   session.delete(:username)
   session[:msg]= "You have been signed out."
   redirect "/"
+end
+
+# Signup form
+get "/users/signup" do
+  erb :signup
+end
+
+# Creating new user
+post "/users/signup" do
+  username = params[:username]
+  password = encrypt_password(params[:password].to_s)
+
+  users_file = File.expand_path("../users.yml", __FILE__)
+  data = YAML.load_file(users_file)
+  data[username] = password
+
+  File.open(users_file, "w") { |file| file.write(data.to_yaml) }
+
+  erb :signin
 end
 
 # Create new file form
