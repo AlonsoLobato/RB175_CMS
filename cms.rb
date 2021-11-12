@@ -3,6 +3,8 @@ require "sinatra/reloader"
 require "sinatra/content_for"
 require "tilt/erubis"
 require "redcarpet"
+require "yaml"
+require "bcrypt"
 
 configure do
   enable :sessions
@@ -42,6 +44,40 @@ def load_file(file_path)
   end
 end
 
+# Check if user is signed in; checks if :username key exists in session hash
+def signed_user?
+  session.key?(:username)
+end
+
+# Handles the routes that require to be signed in
+def required_to_be_signed
+  unless signed_user?
+    session[:msg] = "Sorry, you must be signed in to perform this action."
+    redirect "/"
+  end
+end
+
+# Load credentials file; uses separates paths for the file if test environment or production environment
+def load_user_credentials
+  credentials_path = if ENV["RACK_ENV"] == "test"
+    File.expand_path("../test/users.yml", __FILE__)
+  else
+    File.expand_path("../users.yml", __FILE__)
+  end
+  YAML.load_file(credentials_path)
+end
+
+def valid_credentials?(username, password)
+  credentials = load_user_credentials
+
+  if credentials.key?(username)
+    bcrypt_password = BCrypt::Password.new(credentials[username])
+    bcrypt_password == password
+  else
+    false
+  end
+end
+
 # ----- ROUTES
 
 # View list of documents in CMS
@@ -59,9 +95,10 @@ end
 
 # Signing in
 post "/users/signin" do
-  if params[:username] == "admin" && params[:password] == "secret"
-    session[:username] = params[:username]
-    session[:password] = params[:password]
+  username = params[:username]
+
+  if valid_credentials?(username, params[:password])
+    session[:username] = username
     session[:msg] = "Welcome!"
     redirect "/"
   else
@@ -80,11 +117,15 @@ end
 
 # View create new file / document
 get "/new" do
+  required_to_be_signed
+
   erb :new
 end
 
 # Create new file / document
 post "/create" do
+  required_to_be_signed
+
   filename = params[:filename].to_s
   file_path = File.join(data_path, filename)
 
@@ -115,6 +156,8 @@ end
 
 # View edit a file page form
 get "/:filename/edit" do
+  required_to_be_signed
+
   @file_name = params[:filename]
   file_path = File.join(data_path, @file_name)
   @content = File.read(file_path)
@@ -124,6 +167,8 @@ end
 
 # Edit page
 post "/:filename" do
+  required_to_be_signed
+
   file_name = params[:filename]
   file_path = File.join(data_path, file_name)
   changes = params[:changes]
@@ -136,6 +181,8 @@ end
 
 # View delete file form
 post "/:filename/delete" do
+  required_to_be_signed
+
   file_name = params[:filename]
   file_path = File.join(data_path, file_name)
 
