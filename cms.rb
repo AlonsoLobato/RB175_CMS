@@ -92,7 +92,7 @@ end
 # Checking username is already taken
 def invalid_new_user?(username)
   credentials = load_user_credentials
-  if credentials.key?(username)
+  if credentials.has_key?(username)
     true
   else
     false
