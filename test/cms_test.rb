@@ -190,6 +190,25 @@ class CmsTest < Minitest::Test
     assert_equal "Sorry, you must be signed in to perform this action.", session[:msg]
   end
 
+  def test_duplicate_documents
+    create_document "newtest.txt"
+
+    post "/newtest.txt/duplicate", {}, admin_session
+    assert_equal 302, last_response.status
+    assert_equal "newtest_copy.txt has been created.", session[:msg]
+
+    get "/"
+    assert_includes last_response.body, "newtest_copy.txt"
+  end
+
+  def test_duplicating_signed_out
+    create_document "newtest.txt"
+
+    post "/newtest.txt/duplicate"
+    assert_equal 302, last_response.status
+    assert_equal "Sorry, you must be signed in to perform this action.", session[:msg]
+  end
+
   def test_signin_form
     get "/users/signin"
 
