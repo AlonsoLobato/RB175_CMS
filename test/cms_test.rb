@@ -220,11 +220,8 @@ class CmsTest < Minitest::Test
   def test_signup
     post "/users/signup", username: "random", password: "word"
     assert_equal 200, last_response.status
-    assert_equal "Your user has been created correctly. Please sign in.", session[:msg]
-
-    # get last_response["Location"]
-    # assert_includes last_response.body, "<input"
-    # assert_includes last_response.body, %q(<button type="submit")
+    assert_includes last_response.body, "<input"
+    assert_includes last_response.body, %q(<button type="submit")
   end
 
   def test_signin_form
