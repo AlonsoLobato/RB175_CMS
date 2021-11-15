@@ -64,7 +64,7 @@ end
 
 # Encrypting password
 def encrypt_password(password)
-  bcrypt_password = BCrypt::Password.create(password)
+  BCrypt::Password.create(password).to_s # the 'create' method returns a bunch of values for the new password (version, cost, salt, etc.) of which we only want the encrypted password; appending .to_s returns the wanted encrypted pass and not the rest of values.
 end
 
 # Loading credentials file; uses separates paths for the file if test environment or production environment
