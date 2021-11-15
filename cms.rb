@@ -89,6 +89,16 @@ def valid_credentials?(username, password)
   end
 end
 
+# Checking username is already taken
+def invalid_new_user?(username)
+  credentials = load_user_credentials
+  if credentials.key?(username)
+    true
+  else
+    false
+  end
+end
+
 # --------- ROUTES ------
 
 # List of documents in CMS
@@ -134,15 +144,28 @@ end
 # Creating new user
 post "/users/signup" do
   username = params[:username]
-  password = encrypt_password(params[:password].to_s)
+  password = params[:password]
 
-  users_file = File.expand_path("../users.yml", __FILE__)
-  data = YAML.load_file(users_file)
-  data[username] = password
+  if invalid_new_user?(username)
+    session[:msg] = "Username already in use. Please choose a different username"
+    status 422
+    erb :signup
+  elsif username.size == 0 || password.size == 0
+    session[:msg] = "You must enter a valid username and password"
+    status 422
+    erb :signup
+  else
+    password = encrypt_password(params[:password].to_s)
 
-  File.open(users_file, "w") { |file| file.write(data.to_yaml) }
+    users_file = File.expand_path("../users.yml", __FILE__)
+    data = YAML.load_file(users_file)
+    data[username] = password
 
-  erb :signin
+    File.open(users_file, "w") { |file| file.write(data.to_yaml) }
+
+    session[:msg] = "Your user has been created correctly. Please sign in."
+    erb :signin
+  end
 end
 
 # Create new file form

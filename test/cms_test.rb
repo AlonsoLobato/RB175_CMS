@@ -209,6 +209,24 @@ class CmsTest < Minitest::Test
     assert_equal "Sorry, you must be signed in to perform this action.", session[:msg]
   end
 
+  def test_signup_form
+    get "/users/signup"
+
+    assert_equal 200, last_response.status
+    assert_includes last_response.body, "<input"
+    assert_includes last_response.body, %q(<button type="submit")
+  end
+
+  def test_signup
+    post "/users/signup", username: "random", password: "word"
+    assert_equal 200, last_response.status
+    assert_equal "Your user has been created correctly. Please sign in.", session[:msg]
+
+    # get last_response["Location"]
+    # assert_includes last_response.body, "<input"
+    # assert_includes last_response.body, %q(<button type="submit")
+  end
+
   def test_signin_form
     get "/users/signin"
 
