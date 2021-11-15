@@ -1,16 +1,21 @@
 <ul>
   <% @files.each do |file| %>
     <li>
-      <a href="/<%= file %>"><%= file %></a>
-      <form class="inline" action="/<%= file %>/edit" method="get">
-        <button type="submit">Edit</button>
-      </form>
-      <form class="inline" action="/<%= file %>/delete" method="post">
-        <button type="submit">Delete</button>
-      </form>
-      <form class="inline" action="/<%= file %>/duplicate" method="post">
-        <button type="submit">Duplicate</button>
-      </form>
+      <%= file %>
+      <div>
+        <form class="inline" action="/<%= file %>" method="get">
+          <button type="submit">View</button>
+        </form>
+        <form class="inline" action="/<%= file %>/edit" method="get">
+          <button type="submit">Edit</button>
+        </form>
+        <form class="inline" action="/<%= file %>/delete" method="post">
+          <button type="submit">Delete</button>
+        </form>
+        <form class="inline" action="/<%= file %>/duplicate" method="post">
+          <button type="submit">Duplicate</button>
+        </form>
+      </div>
     </li>
   <% end %>
 </ul>
