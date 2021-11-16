@@ -160,7 +160,6 @@ post "/users/signup" do
     users_file = File.expand_path("../users.yml", __FILE__)
     data = YAML.load_file(users_file)
     data[username] = password
-
     File.open(users_file, "w") { |file| file.write(data.to_yaml) }
 
     session[:msg] = "Your user has been created correctly. Please sign in."
